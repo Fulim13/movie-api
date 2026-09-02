@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Fulim13/movie-api/internal/validator"
@@ -53,6 +54,56 @@ func ValidateMovie(v *validator.Validator, movie *Movie) {
 
 type MovieModel struct {
 	DB *sql.DB
+}
+
+func (m *MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error) {
+	query := fmt.Sprintf(`
+		SELECT id, created_at, title, year, runtime, genres, version
+        	FROM movies
+		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		AND (genres @> $2 OR $2 = '{}')
+		ORDER BY %s %s, id ASC
+	`, filters.sortColumn(), filters.sortDirection())
+	// to_tsvecotor is to turn the title to lexemes, simple means become lowercase lexemes (The Big Breakfast) => (the, big, breakfast)
+	// plainto_tsquery is turn the search value to lexemes
+	// @@ is contains
+	// $1 = '' OR $2 = '{}' is to avoid when searching empty string "", it return 0 result, it should skip and return all results
+	// @> contains
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, title, genres)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	movies := []*Movie{}
+	for rows.Next() {
+		var movie Movie
+
+		err := rows.Scan(
+			&movie.ID,
+			&movie.CreatedAt,
+			&movie.Title,
+			&movie.Year,
+			&movie.Runtime,
+			pq.Array(&movie.Genres),
+			&movie.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		movies = append(movies, &movie)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return movies, nil
 }
 
 func (m *MovieModel) Insert(movie *Movie) error {
