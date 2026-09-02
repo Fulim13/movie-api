@@ -31,3 +31,9 @@ curl -X PUT -d "$BODY" localhost:4000/v1/movies/6
 curl -X DELETE localhost:4000/v1/movies/7
 curl -X DELETE localhost:4000/v1/movies/7
 ```
+
+# Partial Update a Record
+
+```sh
+curl -X PATCH -d '{"year": 1985}' localhost:4000/v1/movies/8
+```
