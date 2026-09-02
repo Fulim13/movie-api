@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Fulim13/movie-api/internal/data"
 	_ "github.com/lib/pq"
 )
 
@@ -29,6 +30,7 @@ type config struct {
 type application struct {
 	config config
 	logger *slog.Logger
+	model  data.Model
 }
 
 func main() {
@@ -55,6 +57,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		logger: logger,
+		model:  data.NewModel(db),
 	}
 
 	server := &http.Server{
