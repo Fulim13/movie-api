@@ -10,10 +10,12 @@ var ErrEditConflict = errors.New("edit conflict")
 
 type Model struct {
 	Movies MovieModel
+	Users  UserModel
 }
 
 func NewModel(db *sql.DB) Model {
 	return Model{
 		Movies: MovieModel{DB: db},
+		Users:  UserModel{DB: db},
 	}
 }
