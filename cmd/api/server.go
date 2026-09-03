@@ -51,12 +51,20 @@ func (app *application) serve() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
+		app.logger.Info("completing background tasks", "addr", server.Addr)
+
 		// Call Shutdown() on our server, passing in the context we just made.
 		// Shutdown() will return nil if the graceful shutdown was successful, or an
 		// error (which may happen because of a problem closing the listeners, or
 		// because the shutdown didn't complete before the 30-second context deadline is
 		// hit). We relay this return value to the shutdownError channel.
-		shutdownError <- server.Shutdown(ctx)
+		err := server.Shutdown(ctx)
+		if err != nil {
+			shutdownError <- err
+		}
+
+		app.wg.Wait()
+		shutdownError <- err
 	}()
 
 	app.logger.Info("starting server", "port", app.config.port, "env", app.config.env)
