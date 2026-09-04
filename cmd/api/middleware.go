@@ -129,11 +129,11 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 	})
 }
 
-func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetuser(r)
 
-		if user.IsAnonymouse() {
+		if user.IsAnonymous() {
 			app.authenticationRequiredResponse(w, r)
 			return
 		}
@@ -142,6 +142,18 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 			app.inactiveAccountResponse(w, r)
 			return
 		}
+
+		permissions, err := app.model.Permissions.GetAllForUser(user.ID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if !permissions.Include(code) {
+			app.notPermittedResponse(w, r)
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
