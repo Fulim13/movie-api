@@ -82,7 +82,7 @@ Protected routes use:
 Authorization: Bearer <authentication_token>
 ```
 
-New users receive `movies:read`. Grant `movies:write` through the `users_permissions` table (see [`instruction/29-permissions.md`](instruction/29-permissions.md)).
+New users receive `movies:read`. Grant `movies:write` through the `users_permissions` table
 
 ## Packages used
 
