@@ -1,4 +1,4 @@
-# Greenlight Movie API
+# Movie API
 
 A Go REST API for managing movies and users. It demonstrates JWT authentication, database permissions, PostgreSQL, asynchronous email, rate limiting, metrics, and graceful shutdown in a small, readable service.
 
