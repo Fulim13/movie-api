@@ -71,8 +71,8 @@ func main() {
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 	flag.StringVar(&cfg.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
 	flag.IntVar(&cfg.smtp.port, "smtp-port", 587, "SMTP port")
-	flag.StringVar(&cfg.smtp.username, "smtp-username", "6729661782ad7f", "SMTP username")
-	flag.StringVar(&cfg.smtp.password, "smtp-password", "8e5e31d9f6023c", "SMTP password")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "bef282f0870823", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "fb50c88037def1", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.fulim.net>", "SMTP sender")
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(s string) error {
 		cfg.cors.trustedOrigins = strings.Fields(s)
