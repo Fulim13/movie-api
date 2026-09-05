@@ -3,10 +3,12 @@ package main
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Fulim13/movie-api/internal/data"
 	"github.com/Fulim13/movie-api/internal/validator"
+	"github.com/pascaldekloe/jwt"
 )
 
 func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, r *http.Request) {
@@ -55,14 +57,28 @@ func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, 
 	}
 
 	// Create New Authentication Token
-	token, err := app.model.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuthentication)
+	// token, err := app.model.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuthentication)
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// 	return
+	// }
+
+	var claims jwt.Claims
+	claims.Subject = strconv.FormatInt(user.ID, 10)
+	claims.Issued = jwt.NewNumericTime(time.Now())
+	claims.NotBefore = jwt.NewNumericTime(time.Now())
+	claims.Expires = jwt.NewNumericTime(time.Now().Add(24 * time.Hour))
+	claims.Issuer = "greenlight.fulim.net"
+	claims.Audiences = []string{"greenlight.fulim.net"}
+
+	jwtBytes, err := claims.HMACSign(jwt.HS256, []byte(app.config.jwt.secret))
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
 	// Write the JSON Output
-	err = app.writeJSON(w, http.StatusCreated, envelope{"token": token}, nil)
+	err = app.writeJSON(w, http.StatusCreated, envelope{"authentication_token": string(jwtBytes)}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

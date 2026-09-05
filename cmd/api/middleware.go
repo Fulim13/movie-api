@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/Fulim13/movie-api/internal/data"
-	"github.com/Fulim13/movie-api/internal/validator"
+	"github.com/pascaldekloe/jwt"
 	"github.com/tomasen/realip"
 	"golang.org/x/time/rate"
 )
@@ -110,14 +110,52 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 		token := headerParts[1]
 
-		v := validator.New()
+		// v := validator.New()
 
-		if data.ValidateTokenPlainText(v, token); !v.Valid() {
+		// if data.ValidateTokenPlainText(v, token); !v.Valid() {
+		// 	app.invalidAuthenticationTokenResponse(w, r)
+		// 	return
+		// }
+
+		// user, err := app.model.Users.GetForToken(data.ScopeAuthentication, token)
+		// if err != nil {
+		// 	switch {
+		// 	case errors.Is(err, data.ErrRecordNotFound):
+		// 		app.invalidAuthenticationTokenResponse(w, r)
+		// 	default:
+		// 		app.serverErrorResponse(w, r, err)
+		// 	}
+		// 	return
+		// }
+
+		claims, err := jwt.HMACCheck([]byte(token), []byte(app.config.jwt.secret))
+		if err != nil {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
 		}
 
-		user, err := app.model.Users.GetForToken(data.ScopeAuthentication, token)
+		if !claims.Valid(time.Now()) {
+			app.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		if claims.Issuer != "greenlight.fulim.net" {
+			app.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		if !claims.AcceptAudience("greenlight.fulim.net") {
+			app.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		userID, err := strconv.ParseInt(claims.Subject, 10, 64)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		user, err := app.model.Users.Get(userID)
 		if err != nil {
 			switch {
 			case errors.Is(err, data.ErrRecordNotFound):
@@ -127,6 +165,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			}
 			return
 		}
+
 		r = app.contextSetUser(r, user)
 		next.ServeHTTP(w, r)
 	})
